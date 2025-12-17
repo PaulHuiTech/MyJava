@@ -1,0 +1,117 @@
+package org.paulhui.concurrent;
+
+/**
+ * 线程基础、线程状态、线程属性
+ */
+public class ThreadBasic {
+    // 创建锁对象
+    private static final Object lock = new Object();
+    private static final Object lock2 = new Object();
+    private static final Object lockMonitor = new Object();
+    private static boolean condition = false;
+
+    public static void main(String[] args) throws InterruptedException {
+        // 创建线程
+        Runnable runnable =  new Runnable() {
+            @Override
+            public void run() {
+                synchronized (lock) {
+                    System.out.println("线程"+Thread.currentThread().getName()+"正在运行");
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt(); // 检测到线程中断，中止线程
+                    }
+                    synchronized (lockMonitor) {
+                        lockMonitor.notifyAll(); // 当线程状态可能变化时通知给监控线程
+                    }
+                }
+                System.out.println("线程"+Thread.currentThread().getName()+"已释放");
+            }
+        };
+        Thread t1 = new Thread(runnable, "t1");
+        Thread t2 = new Thread(runnable, "t2");
+
+        // 等待线程
+        Thread t3 = new Thread(()->{
+            synchronized (lock2) {
+                System.out.println("进入线程"+Thread.currentThread().getName());
+                try {
+                    while (!condition) {
+                        System.out.println("线程"+Thread.currentThread().getName()+"不满足执行条件，进入等待");
+                        synchronized (lockMonitor) {
+                            lockMonitor.notifyAll(); // 当线程状态可能变化时通知给监控线程
+                        }
+                        lock2.wait(); // 释放锁
+                    }
+                    System.out.println("线程"+Thread.currentThread().getName()+"满足执行条件，继续执行");
+                    synchronized (lockMonitor) {
+                        lockMonitor.notifyAll(); // 当线程状态可能变化时通知给监控线程
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt(); // 检测到线程中断，中止线程
+                }
+            }
+        });
+        t3.setName("t3");
+
+        // 通知线程
+        Thread t4 = new Thread(()->{
+            synchronized (lock2) {
+                System.out.println("进入线程"+Thread.currentThread().getName());
+                System.out.println("开始通知等待线程继续");
+                condition = true;
+                lock2.notifyAll(); // 不会释放锁
+                System.out.println("线程"+Thread.currentThread().getName()+"通知完毕");
+                synchronized (lockMonitor) {
+                    lockMonitor.notifyAll(); // 当线程状态可能变化时通知给监控线程
+                }
+            }
+        }, "t4");
+
+        // 监控线程（设为守护线程）
+        Thread t5 = new Thread(()->{
+            synchronized (lockMonitor) {
+                while (!(Thread.State.TERMINATED.equals(t1.getState())
+                        && Thread.State.TERMINATED.equals(t2.getState())
+                        && Thread.State.TERMINATED.equals(t3.getState())
+                        && Thread.State.TERMINATED.equals(t4.getState()))) {
+                    System.out.printf("---监控结果，线程t1状态为%s，线程t2状态为%s，线程t3状态为%s，线程t4状态为%s%n",
+                            t1.getState(), t2.getState(), t3.getState(), t4.getState());
+                    try {
+                        lockMonitor.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                System.out.println("守护监控线程执行完毕，退出------");
+            }
+        }, "t5");
+        t5.setDaemon(true); // 设为守护线程
+
+        t5.start();
+        t1.start();
+        t3.start();
+        Thread.sleep(500); // 确保t1 t3先启动成功
+        t2.start();
+        t4.start();
+    }
+    /**
+     * main输出结果
+     * ---监控结果，线程t1状态为RUNNABLE，线程t2状态为NEW，线程t3状态为RUNNABLE，线程t4状态为NEW
+     * 线程t1正在运行
+     * 进入线程t3
+     * 线程t3不满足执行条件，进入等待
+     * ---监控结果，线程t1状态为TIMED_WAITING，线程t2状态为NEW，线程t3状态为WAITING，线程t4状态为NEW
+     * 进入线程t4
+     * 开始通知等待线程继续
+     * 线程t4通知完毕
+     * ---监控结果，线程t1状态为TIMED_WAITING，线程t2状态为BLOCKED，线程t3状态为RUNNABLE，线程t4状态为TERMINATED
+     * 线程t3满足执行条件，继续执行
+     * ---监控结果，线程t1状态为TIMED_WAITING，线程t2状态为BLOCKED，线程t3状态为TERMINATED，线程t4状态为TERMINATED
+     * ---监控结果，线程t1状态为RUNNABLE，线程t2状态为RUNNABLE，线程t3状态为TERMINATED，线程t4状态为TERMINATED
+     * 线程t1已释放
+     * 线程t2正在运行
+     * 线程t2已释放
+     */
+}
