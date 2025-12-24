@@ -22,7 +22,7 @@ public class ThreadBasic {
             @Override
             public void run() {
                 synchronized (lock) {
-                    Utils.PrintWithThread("线程"+Thread.currentThread().getName()+"正在运行");
+                    Utils.print("线程"+Thread.currentThread().getName()+"正在运行");
                     try {
                         Thread.sleep(3000);
                     } catch (InterruptedException e) {
@@ -32,7 +32,7 @@ public class ThreadBasic {
                         lockMonitor.notifyAll(); // 当线程状态可能变化时通知给监控线程
                     }
                 }
-                Utils.PrintWithThread("线程"+Thread.currentThread().getName()+"已释放");
+                Utils.print("线程"+Thread.currentThread().getName()+"已释放");
             }
         };
         Thread t1 = new Thread(runnable, "t1");
@@ -41,16 +41,16 @@ public class ThreadBasic {
         // 等待线程
         Thread t3 = new Thread(()->{
             synchronized (lock2) {
-                Utils.PrintWithThread("进入线程"+Thread.currentThread().getName());
+                Utils.print("进入线程"+Thread.currentThread().getName());
                 try {
                     while (!condition) {
-                        Utils.PrintWithThread("线程"+Thread.currentThread().getName()+"不满足执行条件，进入等待");
+                        Utils.print("线程"+Thread.currentThread().getName()+"不满足执行条件，进入等待");
                         synchronized (lockMonitor) {
                             lockMonitor.notifyAll(); // 当线程状态可能变化时通知给监控线程
                         }
                         lock2.wait(); // 释放锁
                     }
-                    Utils.PrintWithThread("线程"+Thread.currentThread().getName()+"满足执行条件，继续执行");
+                    Utils.print("线程"+Thread.currentThread().getName()+"满足执行条件，继续执行");
                     synchronized (lockMonitor) {
                         lockMonitor.notifyAll(); // 当线程状态可能变化时通知给监控线程
                     }
@@ -64,11 +64,11 @@ public class ThreadBasic {
         // 通知线程
         Thread t4 = new Thread(()->{
             synchronized (lock2) {
-                Utils.PrintWithThread("进入线程"+Thread.currentThread().getName());
-                Utils.PrintWithThread("开始通知等待线程继续");
+                Utils.print("进入线程"+Thread.currentThread().getName());
+                Utils.print("开始通知等待线程继续");
                 condition = true;
                 lock2.notifyAll(); // 不会释放锁
-                Utils.PrintWithThread("线程"+Thread.currentThread().getName()+"通知完毕");
+                Utils.print("线程"+Thread.currentThread().getName()+"通知完毕");
                 synchronized (lockMonitor) {
                     lockMonitor.notifyAll(); // 当线程状态可能变化时通知给监控线程
                 }
@@ -91,7 +91,7 @@ public class ThreadBasic {
                         e.printStackTrace();
                     }
                 }
-//                Utils.PrintWithThread("守护监控线程执行完毕，退出------");
+//                Utils.print("守护监控线程执行完毕，退出------");
             }
         }, "t5");
         t5.setDaemon(true); // 设为守护线程
@@ -106,13 +106,13 @@ public class ThreadBasic {
             }
             @Override
             public void run() {
-                Utils.PrintWithThread("线程"+Thread.currentThread().getName()+"开始运行"+this.taskName+"任务，运行时间"+this.duration);
+                Utils.print("线程"+Thread.currentThread().getName()+"开始运行"+this.taskName+"任务，运行时间"+this.duration);
                 try {
                     Thread.sleep(this.duration);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt(); // 检测到线程中断，中止线程
                 }
-                Utils.PrintWithThread("线程"+Thread.currentThread().getName()+"结束运行"+this.taskName+"任务");
+                Utils.print("线程"+Thread.currentThread().getName()+"结束运行"+this.taskName+"任务");
             }
         }
 
@@ -128,19 +128,19 @@ public class ThreadBasic {
         t6.start();
         t7.start();
         // 主线程等待线程t6执行完成，再执行后续
-        Utils.PrintWithThread("主线程"+Thread.currentThread().getName()+"等待线程t6执行完毕--");
+        Utils.print("主线程"+Thread.currentThread().getName()+"等待线程t6执行完毕--");
         t6.join();
-        Utils.PrintWithThread("线程t6执行完毕，主线程"+Thread.currentThread().getName()+"继续运行");
+        Utils.print("线程t6执行完毕，主线程"+Thread.currentThread().getName()+"继续运行");
         t4.start(); // 这样也可以确保t4在t3之后启动
 
         // 主线程等待线程t7 2000ms，2000ms未执行完则继续主线程
-        Utils.PrintWithThread("主线程"+Thread.currentThread().getName()+"等待线程t7执行2秒");
+        Utils.print("主线程"+Thread.currentThread().getName()+"等待线程t7执行2秒");
         t7.join(2000);
-        Utils.PrintWithThread("已等待线程t7执行2秒，主线程"+Thread.currentThread().getName()+"继续运行");
+        Utils.print("已等待线程t7执行2秒，主线程"+Thread.currentThread().getName()+"继续运行");
         if (t7.isAlive()) {
-            Utils.PrintWithThread("线程t7仍在运行中，状态为"+t6.getState());
+            Utils.print("线程t7仍在运行中，状态为"+t6.getState());
         } else {
-            Utils.PrintWithThread("线程t7已提前完成");
+            Utils.print("线程t7已提前完成");
         }
     }
     
