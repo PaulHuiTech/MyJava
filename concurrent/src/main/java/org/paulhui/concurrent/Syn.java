@@ -97,6 +97,11 @@ class BankAccountSynWithReentrantLock extends BankAccount {
             try {
                 Utils.print("账户"+this.accountNo+"向账户"+toAccount.getAccountNo()+"转账开始第"+i+"次");
                 this.balance = this.balance.subtract(money);
+                try {
+                    Thread.sleep(10); // 设置延时，更容易触发竟态
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 toAccount.setBalance(toAccount.getBalance().add(money));
                 Utils.print("账户"+this.accountNo+"向账户"+toAccount.getAccountNo()+"第"+i+"次转账成功，账户"+this.accountNo+"余额："
                         +this.balance+"，账户"+toAccount.getAccountNo()+"余额："+toAccount.getBalance());
